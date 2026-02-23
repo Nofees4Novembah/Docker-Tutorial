@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Docker Calculator</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #1e1e2e;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    .calculator {
+      background: #2a2a3d;
+      border-radius: 16px;
+      padding: 32px;
+      width: 340px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    h1 {
+      color: #cdd6f4;
+      text-align: center;
+      font-size: 1.2rem;
+      margin-bottom: 24px;
+      letter-spacing: 1px;
+    }
+    .inputs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    input[type="number"] {
+      flex: 1;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #45475a;
+      background: #1e1e2e;
+      color: #cdd6f4;
+      font-size: 1rem;
+      text-align: center;
+      outline: none;
+    }
+    input[type="number"]:focus { border-color: #89b4fa; }
+    .operators {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .op-btn {
+      padding: 14px;
+      border: 2px solid #45475a;
+      border-radius: 8px;
+      background: #1e1e2e;
+      color: #cdd6f4;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .op-btn:hover { background: #313244; border-color: #89b4fa; }
+    .op-btn.selected { background: #89b4fa; color: #1e1e2e; border-color: #89b4fa; font-weight: bold; }
+    .calc-btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      background: #89b4fa;
+      color: #1e1e2e;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .calc-btn:hover { background: #74c7ec; }
+    .result {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: #a6e3a1;
+      min-height: 40px;
+    }
+    .error { color: #f38ba8; font-size: 1rem; }
+  </style>
+</head>
+<body>
+  <div class="calculator">
+    <h1>🐳 Docker Calculator</h1>
+    <div class="inputs">
+      <input type="number" id="numA" placeholder="A" />
+      <input type="number" id="numB" placeholder="B" />
+    </div>
+    <div class="operators">
+      <button class="op-btn" onclick="selectOp(this, '+')">+</button>
+      <button class="op-btn" onclick="selectOp(this, '-')">−</button>
+      <button class="op-btn" onclick="selectOp(this, '*')">×</button>
+      <button class="op-btn" onclick="selectOp(this, '/')">÷</button>
+    </div>
+    <button class="calc-btn" onclick="calculate()">Calculate</button>
+    <div class="result" id="result">—</div>
+  </div>
+
+  <script>
+    let selectedOp = null;
+
+    function selectOp(btn, op) {
+      document.querySelectorAll('.op-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedOp = op;
+    }
+
+    async function calculate() {
+      const a = document.getElementById('numA').value;
+      const b = document.getElementById('numB').value;
+      const resultEl = document.getElementById('result');
+
+      if (a === '' || b === '' || !selectedOp) {
+        resultEl.innerHTML = '<span class="error">Please fill in all fields</span>';
+        return;
+      }
+
+      try {
+        const res = await fetch('http://localhost:5001/calculate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ a, b, operator: selectedOp })
+        });
+        const data = await res.json();
+        if (data.error) {
+          resultEl.innerHTML = `<span class="error">${data.error}</span>`;
+        } else {
+          resultEl.textContent = data.result;
+        }
+      } catch {
+        resultEl.innerHTML = '<span class="error">Could not reach backend</span>';
+      }
+    }
+  </script>
+</body>
+</html>
